@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doomsday Countdown</title>
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com/css2?family=Roboto:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .countdown-container {
+            text-align: center;
+            user-select: none;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 12px;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            padding-left: 12px;
+        }
+        .timer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 72px;
+            font-weight: 900;
+            gap: 10px;
+        }
+        .unit-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 110px;
+        }
+        .labels {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .label-box {
+            min-width: 110px;
+            text-align: center;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #aaaaaa;
+        }
+        .separator {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Подключаем ваш аудиофайл -->
+    <audio id="tick-sound" src="tick.mp3" preload="auto"></audio>
+
+    <div class="countdown-container">
+        <div class="title">Doomsday is coming</div>
+        
+        <div class="timer">
+            <div class="unit-box"><span id="months">00</span></div>
+            <div class="separator">:</div>
+            <div class="unit-box"><span id="days">00</span></div>
+            <div class="separator">:</div>
+            <div class="unit-box"><span id="hours">00</span></div>
+            <div class="separator">:</div>
+            <div class="unit-box"><span id="minutes">00</span></div>
+            <div class="separator">:</div>
+            <div class="unit-box"><span id="seconds">00</span></div>
+        </div>
+
+        <div class="labels">
+            <div class="label-box">Months</div>
+            <div class="label-box" style="margin-left: 15px;">Days</div>
+            <div class="label-box" style="margin-left: 15px;">Hours</div>
+            <div class="label-box" style="margin-left: 15px;">Min</div>
+            <div class="label-box" style="margin-left: 15px;">Sec</div>
+        </div>
+    </div>
+
+    <script>
+        const targetDate = new Date("2026-12-18T00:00:00+05:00").getTime();
+        const tickAudio = document.getElementById("tick-sound");
+        let isAudioAllowed = false;
+
+        // Активация звука по первому клику пользователя
+        function enableAudio() {
+            isAudioAllowed = true;
+            // Принудительно синхронизируем первый запуск под текущую секунду
+            const currentSecond = new Date().getSeconds();
+            if (currentSecond % 2 === 0) {
+                playTick();
+            }
+            document.body.removeEventListener('click', enableAudio);
+            document.body.removeEventListener('keydown', enableAudio);
+        }
+
+        document.body.addEventListener('click', enableAudio);
+        document.body.addEventListener('keydown', enableAudio);
+
+        function playTick() {
+            if (!isAudioAllowed) return;
+            tickAudio.currentTime = 0; 
+            tickAudio.play().catch(err => console.log("Ошибка воспроизведения:", err));
+        }
+
+        function updateCountdown() {
+            const now = new Date();
+            const difference = targetDate - now.getTime();
+
+            if (difference <= 0) {
+                document.querySelector(".countdown-container").innerHTML = "<div class='title'>Time is up</div>";
+                clearInterval(intervalId);
+                return;
+            }
+
+            const second = 1000;
+            const minute = second * 60;
+            const hour = minute * 60;
+            const day = hour * 24;
+            const month = day * 30.44;
+
+            const textMonths = Math.floor(difference / month);
+            const textDays = Math.floor((difference % month) / day);
+            const textHours = Math.floor((difference % day) / hour);
+            const textMinutes = Math.floor((difference % hour) / minute);
+            const textSeconds = Math.floor((difference % minute) / second);
+
+            document.getElementById("months").innerText = String(textMonths).padStart(2, '0');
+            document.getElementById("days").innerText = String(textDays).padStart(2, '0');
+            document.getElementById("hours").innerText = String(textHours).padStart(2, '0');
+            document.getElementById("minutes").innerText = String(textMinutes).padStart(2, '0');
+            document.getElementById("seconds").innerText = String(textSeconds).padStart(2, '0');
+
+            // Запускаем файл только на четных секундах (каждые 2 секунды)
+            // Это позволит первому удару совпасть с одной секундой, а второму (тихому) — со следующей
+            if (now.getSeconds() % 2 === 0) {
+                playTick();
+            }
+        }
+
+        const intervalId = setInterval(updateCountdown, 1000);
+        updateCountdown();
+    </script>
+
+</body>
+</html>
